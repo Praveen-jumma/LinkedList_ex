@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        PYTHON = "/usr/bin/python3"
-    }
-
     stages {
 
         stage('Checkout Code') {
@@ -14,72 +10,46 @@ pipeline {
             }
         }
 
-        stage('Setup Python Env') {
+        stage('Check Python Version') {
             steps {
-                sh '''
-                    python3 --version
-                    pip3 --version || true
-                '''
+                bat """
+                    python --version
+                    pip --version
+                """
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Syntax Check') {
             steps {
-                sh '''
-                    if [ -f requirements.txt ]; then
-                        pip3 install -r requirements.txt
-                    else
-                        echo "No requirements.txt found. Skipping"
-                    fi
-                '''
-            }
-        }
-
-        stage('Run Code Quality Checks') {
-            steps {
-                sh '''
-                    echo "Running syntax check..."
-                    python3 -m py_compile DEVOPS_EX/LinkedList.py
-                '''
+                bat """
+                    python -m py_compile DEVOPS_EX\\LinkedList.py
+                """
             }
         }
 
         stage('Run Application') {
             steps {
-                sh '''
-                    echo "Executing LinkedList.py"
-                    python3 DEVOPS_EX/LinkedList.py || true
-                '''
+                bat """
+                    python DEVOPS_EX\\LinkedList.py
+                """
             }
         }
 
         stage('Archive Artifacts') {
             steps {
-                sh '''
-                    mkdir -p artifacts
-                    cp DEVOPS_EX/LinkedList.py artifacts/
-                '''
+                bat "mkdir artifacts"
+                bat "copy DEVOPS_EX\\LinkedList.py artifacts\\"
                 archiveArtifacts artifacts: 'artifacts/*', fingerprint: true
-            }
-        }
-
-        stage('Deploy (Optional)') {
-            when {
-                expression { return false }   
-            }
-            steps {
-                sh "echo Deploy step placeholder"
             }
         }
     }
 
     post {
         success {
-            echo "Pipeline completed successfully."
+            echo "Build Success"
         }
         failure {
-            echo "Pipeline failed. Fix your code."
+            echo "Build Failed"
         }
     }
 }
-
